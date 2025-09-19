@@ -37,7 +37,7 @@ table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: 
 th, td {
   border: 1px solid #e5e5e5;
   padding: 6px 4px;
-  text-align: center;     /* ★ 全項目を中央寄せ */
+  text-align: center;
   font-size: 13px;
   word-break: break-word;
 }
@@ -50,10 +50,7 @@ thead th { background: #fafafa; }
 
 /* 入力とテキストの中央寄せ */
 input[type="number"] { width: 100%; max-width: 5em; padding: 3px 4px; font-size: inherit; text-align: center; }
-.value-text { display: inline-block; min-width: 4em; text-align: center; } /* ★ テキスト表示用 */
-
-/* 合計 */
-tfoot td { background: #fafafa; font-weight: bold; }
+.value-text { display: inline-block; min-width: 4em; text-align: center; }
 
 /* 操作列 */
 .op-col button { width: 100%; padding: 4px 6px; }
@@ -64,18 +61,18 @@ tfoot td { background: #fafafa; font-weight: bold; }
 .guide-row { margin-top: 6px; display: flex; gap: var(--gap); flex-wrap: wrap; }
 .guide-row button.active { background: #1976d2; color: #fff; border-color: #1976d2; }
 
-/* ★ 共通サイズ設定（全選択/全解除/選択1〜10 共通） */
+/* ★ PC時の共通サイズ（全選択/全解除/選択1〜10 共通） */
 .guide-row button,
 .guide-actions button {
-  width: 100px;       /* ← 共通横幅を指定（例：100px） */
-  height: 36px;       /* ← 共通縦幅を指定（例：36px） */
-  padding: 0;         /* 横幅を固定する場合は左右paddingを0に */
+  width: 100px;
+  height: 36px;
+  padding: 0;
   border: 1px solid #ccc;
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
   text-align: center;
-  line-height: 36px;  /* ★ 縦中央揃え */
+  line-height: 36px;
   font-size: 14px;
 }
 
@@ -90,15 +87,13 @@ tfoot td { background: #fafafa; font-weight: bold; }
 }
 #chartScatter { width: 100% !important; height: 100% !important; display: block; }
 
-/* ==== モバイル（<=640px）も中央寄せ維持 ==== */
+/* ==== モバイル（<=640px）：テーブル横並び維持＋ガイド5等分＋ズーム抑止 ==== */
 @media (max-width: 640px) {
-  /* フォントと余白を小さくして、横並びのまま画面に収める */
   :root { --font: 11px; }
   body { margin: 8px; }
   .container { max-width: 100%; }
   h1 { font-size: 16px; }
 
-  /* ★ テーブルはPCと同じテーブル表示のまま（カード化しない） */
   table { table-layout: fixed; width: 100%; }
   thead { display: table-header-group; }
   tbody { display: table-row-group; }
@@ -106,46 +101,39 @@ tfoot td { background: #fafafa; font-weight: bold; }
   tr    { display: table-row; }
   th, td{ display: table-cell; padding: 3px 2px; font-size: 12px; }
 
-  /* 入力幅も縮小して横詰め */
-  input[type="number"] { max-width: 3.6em; padding: 2px 3px; font-size: 12px; }
+  /* 入力はズーム抑止のためフォント16px。高さ・余白を小さめに調整 */
+  input[type="number"] {
+    max-width: 3.6em;
+    padding: 2px 3px;
+    font-size: 16px;     /* ★ iOSのフォーカスズーム対策 */
+    line-height: 1.2;
+  }
 
   /* 種別ボタンは詰めて配置 */
   .kind-btns { gap: 3px; }
   .kind-btns button { padding: 3px 6px; font-size: 12px; }
 
-  /* ガイドボタンも少しコンパクトに（共通サイズを維持しつつフォントだけ小さく） */
-  .guide-row button,
-  .guide-actions button { font-size: 12px; }
+  /* ★ ガイド選択肢を5列グリッドで均等配置 */
+  .guide-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  /* ★ グリッドに合わせてボタン幅をフルに（PCの固定幅を上書き） */
+  .guide-row button { width: 100%; height: 36px; line-height: 36px; font-size: 12px; }
 
-  /* グラフ高さ（必要に応じて調整可） */
   .chart-card { height: 40vh; min-height: 200px; }
 }
 
-
 /* number入力の上下矢印を非表示 */
 input[type="number"] {
-  -moz-appearance: textfield;       /* Firefox */
-  appearance: textfield;            /* 標準 */
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;         /* Chrome/Safari/Edge */
+  -webkit-appearance: none;
   margin: 0;
-}
-
-/* モバイル合計バー */
-.totals-bar {
-  display: none;
-  margin-top: 8px;
-  padding: 8px 10px;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  background: #fafafa;
-  font-weight: 600;
-  justify-content: space-between;
-}
-@media (max-width: 640px) {
-  .totals-bar { display: flex; }
 }
 </style>
 </head>
@@ -170,21 +158,10 @@ input[type="number"]::-webkit-outer-spin-button {
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
-    <tfoot>
-      <tr>
-        <td colspan="3">合計</td>
-        <td id="total-yuuri">0</td>
-        <td id="total-diff">0</td>
-        <td></td>
-      </tr>
-    </tfoot>
+    <!-- ★ 合計欄（tfoot）は削除 -->
   </table>
 
-  <!-- モバイル用 合計バー -->
-  <div class="totals-bar" id="totals-bar">
-    <div>総有利G数：<span id="mb-total-yuuri">0</span></div>
-    <div>総差枚数：<span id="mb-total-diff">0</span></div>
-  </div>
+  <!-- ★ モバイル用 合計バーも削除 -->
 
   <!-- ==== ガイドライン選択（上段5 / 下段5 + 一括操作） ==== -->
   <div id="guide-controls">
@@ -226,14 +203,10 @@ const FIXED_YUURI  = {{ fixed_yuuri|tojson }};  // 例: REG:25 / BIG:60
 const DEFAULT_ROWS = {{ default_rows|tojson }};
 
 const tbody = document.getElementById("tbody");
-const totalYuuriCell = document.getElementById("total-yuuri");
-const totalDiffCell  = document.getElementById("total-diff");
-const mbTotalYuuri   = document.getElementById("mb-total-yuuri");
-const mbTotalDiff    = document.getElementById("mb-total-diff");
 
 const floorInt = n=>Math.floor(Number(n)||0);
 const toInt = v=>{ const n=Number(v); return Number.isFinite(n)?Math.trunc(n):0; };
-const makeRowData = (label="", kind="REG", games=0)=>({label, kind, games:toInt(games)});
+const makeRowData = (label="", kind="REG", games="")=>({label, kind, games}); // ★ 初期値は空文字
 
 /* ===== 行生成（総有利/総差はテキスト表示） ===== */
 function buildRow(idx, data){
@@ -258,7 +231,6 @@ function buildRow(idx, data){
       b.classList.add(k==="REG" ? "reg-selected" : "big-selected");
     }
     b.addEventListener("click",()=>{
-      // 色を付替え
       btnWrap.querySelectorAll("button").forEach(x=>x.classList.remove("reg-selected","big-selected"));
       b.classList.add(k==="REG" ? "reg-selected" : "big-selected");
       recalcAll();
@@ -267,15 +239,18 @@ function buildRow(idx, data){
   });
   tdKind.appendChild(btnWrap);
 
-  // ゲーム数（入力）
+  // ゲーム数（入力） ★初期値は空欄
   const tdGames=document.createElement("td");
   tdGames.dataset.label = "ゲーム数";
   const gInput=document.createElement("input");
-  gInput.type="number"; gInput.value=toInt(data.games ?? 0);
+  gInput.type="number";
+  gInput.inputMode="numeric"; // モバイルで数字キーボード
+  gInput.placeholder="";      // 視覚的に空欄
+  gInput.value = (data.games ?? ""); // ★空文字
   gInput.addEventListener("input",recalcAll);
   tdGames.appendChild(gInput);
 
-  // 総有利G数（累計）→ ★テキスト表示
+  // 総有利G数（累計）→ テキスト表示
   const tdYuuriSum=document.createElement("td");
   tdYuuriSum.dataset.label = "総有利G数（累計）";
   const ySumText=document.createElement("span");
@@ -283,7 +258,7 @@ function buildRow(idx, data){
   ySumText.textContent="0";
   tdYuuriSum.appendChild(ySumText);
 
-  // 総差枚数（累計）→ ★テキスト表示
+  // 総差枚数（累計）→ テキスト表示
   const tdDiffSum=document.createElement("td");
   tdDiffSum.dataset.label = "総差枚数（累計）";
   const dSumText=document.createElement("span");
@@ -340,7 +315,7 @@ function initScatterChart(){
         x:{type:'linear',min:0,max:6000,title:{display:true,text:'総有利G数'}},
         y:{min:-6000,max:3000,title:{display:true,text:'総差枚数'}}
       },
-      plugins:{legend:{display:false}}  // グラフタイトル（凡例）非表示
+      plugins:{legend:{display:false}}
     }
   });
 }
@@ -353,11 +328,12 @@ function recalcAll(){
   [...tbody.querySelectorAll("tr")].forEach(tr=>{
     const { gInput,ySumText,dSumText,btnWrap } = tr._refs;
 
-    // 選択種別
+    // 種別
     const selBtn=[...btnWrap.querySelectorAll("button")]
                    .find(b=>b.classList.contains("reg-selected")||b.classList.contains("big-selected"));
     const kind = selBtn ? selBtn.textContent.trim() : "REG";
 
+    // ゲーム数（空文字は0として扱う）
     const games=toInt(gInput.value);
     const medals=FIXED_MEDALS[kind];
     const yuuri =FIXED_YUURI[kind];
@@ -373,20 +349,13 @@ function recalcAll(){
     const y_after=y_before+medals;
     points.push({x:x_after,y:y_after});
 
-    // ★ テキスト表示に出力
+    // 表示
     ySumText.textContent = String(x_after);
     dSumText.textContent = String(y_after);
 
-    // 次の起点
     yuuriAfter=x_after;
     diffAfter=y_after;
   });
-
-  // 合計
-  totalYuuriCell.textContent=String(yuuriAfter);
-  totalDiffCell.textContent=String(diffAfter);
-  mbTotalYuuri.textContent=String(yuuriAfter);
-  mbTotalDiff.textContent=String(diffAfter);
 
   // グラフ更新
   if(!scatterChart) initScatterChart();
@@ -436,14 +405,14 @@ function addRow(data=makeRowData()){
 }
 function resetRows(){
   tbody.innerHTML="";
-  DEFAULT_ROWS.forEach(r=>addRow(makeRowData(r.label,"REG",0)));
+  DEFAULT_ROWS.forEach(r=>addRow(makeRowData(r.label,"REG",""))); // ★ 初期ゲーム数は空欄
   recalcAll();
 }
 
 /* ===== 初期化 ===== */
 resetRows();
 initScatterChart();
-document.getElementById("add-row-btn").addEventListener("click",()=>addRow(makeRowData(`${tbody.children.length+1}個目`,"REG",0)));
+document.getElementById("add-row-btn").addEventListener("click",()=>addRow(makeRowData(`${tbody.children.length+1}個目`,"REG",""))); // ★ 追加行も空欄
 document.getElementById("reset-btn").addEventListener("click",resetRows);
 </script>
 </body>
