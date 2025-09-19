@@ -92,38 +92,35 @@ tfoot td { background: #fafafa; font-weight: bold; }
 
 /* ==== モバイル（<=640px）も中央寄せ維持 ==== */
 @media (max-width: 640px) {
-  :root { --font: 13px; }
-  body { margin: 10px; }
+  /* フォントと余白を小さくして、横並びのまま画面に収める */
+  :root { --font: 11px; }
+  body { margin: 8px; }
   .container { max-width: 100%; }
-  h1 { font-size: 18px; }
+  h1 { font-size: 16px; }
 
-  table, thead, tbody, th, td, tr { display: block; }
-  thead { display: none; }
-  tfoot { display: none; }
-  tr {
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
-    padding: 8px;
-    margin-bottom: 8px;
-    background: #fff;
-    text-align: center;               /* ★ 全体中央寄せ */
-  }
-  td {
-    border: none;
-    border-bottom: 1px solid #f0f0f0;
-    padding: 8px 4px;
-  }
-  td:last-child { border-bottom: none; }
-  td::before {
-    content: attr(data-label);
-    display: block;
-    font-weight: 600;
-    color: #444;
-    margin-bottom: 4px;
-  }
-  input[type="number"] { max-width: 100%; }
+  /* ★ テーブルはPCと同じテーブル表示のまま（カード化しない） */
+  table { table-layout: fixed; width: 100%; }
+  thead { display: table-header-group; }
+  tbody { display: table-row-group; }
+  tfoot { display: table-footer-group; }
+  tr    { display: table-row; }
+  th, td{ display: table-cell; padding: 3px 2px; font-size: 12px; }
+
+  /* 入力幅も縮小して横詰め */
+  input[type="number"] { max-width: 3.6em; padding: 2px 3px; font-size: 12px; }
+
+  /* 種別ボタンは詰めて配置 */
+  .kind-btns { gap: 3px; }
+  .kind-btns button { padding: 3px 6px; font-size: 12px; }
+
+  /* ガイドボタンも少しコンパクトに（共通サイズを維持しつつフォントだけ小さく） */
+  .guide-row button,
+  .guide-actions button { font-size: 12px; }
+
+  /* グラフ高さ（必要に応じて調整可） */
   .chart-card { height: 40vh; min-height: 200px; }
 }
+
 
 /* number入力の上下矢印を非表示 */
 input[type="number"] {
