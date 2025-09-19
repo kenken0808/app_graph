@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>けんけんツール</title>
+<style>
+:root{
+  --gap: 6px;
+  --font: 14px;
+  --maxw: 820px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", Arial, sans-serif;
+  margin: 14px;
+  color: #222;
+  overflow-x: hidden;
+  font-size: var(--font);
+}
+.container { max-width: var(--maxw); margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 10px; }
+
+/* 共通ボタン */
+button {
+  padding: 5px 8px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+.controls { display: flex; gap: var(--gap); flex-wrap: wrap; }
+
+/* ====== テーブル（全て中央寄せ） ====== */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+th, td {
+  border: 1px solid #e5e5e5;
+  padding: 6px 4px;
+  text-align: center;     /* ★ 全項目を中央寄せ */
+  font-size: 13px;
+  word-break: break-word;
+}
+thead th { background: #fafafa; }
+
+/* 種別ボタン横並び＋色分け */
+.kind-btns { display: flex; justify-content: center; gap: 4px; }
+.kind-btns button.reg-selected { background: #1976d2; color: #fff; border-color: #1976d2; } /* REG=青 */
+.kind-btns button.big-selected { background: #d32f2f; color: #fff; border-color: #d32f2f; } /* BIG=赤 */
+
+/* 入力とテキストの中央寄せ */
+input[type="number"] { width: 100%; max-width: 5em; padding: 3px 4px; font-size: inherit; text-align: center; }
+.value-text { display: inline-block; min-width: 4em; text-align: center; } /* ★ テキスト表示用 */
+
+/* 合計 */
+tfoot td { background: #fafafa; font-weight: bold; }
+
+/* 操作列 */
+.op-col button { width: 100%; padding: 4px 6px; }
+
+/* ==== ガイドライン ==== */
+#guide-controls { margin-top: 12px; }
+.guide-actions { margin-bottom: 6px; display: flex; gap: var(--gap); flex-wrap: wrap; }
+.guide-row { margin-top: 6px; display: flex; gap: var(--gap); flex-wrap: wrap; }
+.guide-row button.active { background: #1976d2; color: #fff; border-color: #1976d2; }
+
+/* ★ 共通サイズ設定（全選択/全解除/選択1〜10 共通） */
+.guide-row button,
+.guide-actions button {
+  width: 100px;       /* ← 共通横幅を指定（例：100px） */
+  height: 36px;       /* ← 共通縦幅を指定（例：36px） */
+  padding: 0;         /* 横幅を固定する場合は左右paddingを0に */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  line-height: 36px;  /* ★ 縦中央揃え */
+  font-size: 14px;
+}
+
+/* ==== グラフ領域（タイトル無し） ==== */
+.charts { margin-top: 12px; }
+.chart-card {
+  padding: 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
+  height: 600px;
+}
+#chartScatter { width: 100% !important; height: 100% !important; display: block; }
+
+/* ==== モバイル（<=640px）も中央寄せ維持 ==== */
+@media (max-width: 640px) {
+  :root { --font: 13px; }
+  body { margin: 10px; }
+  .container { max-width: 100%; }
+  h1 { font-size: 18px; }
+
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  tfoot { display: none; }
+  tr {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #fff;
+    text-align: center;               /* ★ 全体中央寄せ */
+  }
+  td {
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 4px;
+  }
+  td:last-child { border-bottom: none; }
+  td::before {
+    content: attr(data-label);
+    display: block;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+  }
+  input[type="number"] { max-width: 100%; }
+  .chart-card { height: 40vh; min-height: 200px; }
+}
+
+/* number入力の上下矢印を非表示 */
+input[type="number"] {
+  -moz-appearance: textfield;       /* Firefox */
+  appearance: textfield;            /* 標準 */
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;         /* Chrome/Safari/Edge */
+  margin: 0;
+}
+
+/* モバイル合計バー */
+.totals-bar {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fafafa;
+  font-weight: 600;
+  justify-content: space-between;
+}
+@media (max-width: 640px) {
+  .totals-bar { display: flex; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>けんけんツール</h1>
+
+  <div class="controls">
+    <button id="add-row-btn">＋ 履歴を追加</button>
+    <button id="reset-btn">リセット（初期10件）</button>
+  </div>
+
+  <table id="history-table">
+    <thead>
+      <tr>
+        <th style="width:18%;">履歴</th>
+        <th style="width:22%;">種別</th>
+        <th style="width:18%;">ゲーム数</th>
+        <th style="width:18%;">総有利G数</th>
+        <th style="width:18%;">総差枚数</th>
+        <th style="width:18%;">操作</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">合計</td>
+        <td id="total-yuuri">0</td>
+        <td id="total-diff">0</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- モバイル用 合計バー -->
+  <div class="totals-bar" id="totals-bar">
+    <div>総有利G数：<span id="mb-total-yuuri">0</span></div>
+    <div>総差枚数：<span id="mb-total-diff">0</span></div>
+  </div>
+
+  <!-- ==== ガイドライン選択（上段5 / 下段5 + 一括操作） ==== -->
+  <div id="guide-controls">
+    <div class="guide-actions">
+      <button id="select-all">全選択</button>
+      <button id="deselect-all">全解除</button>
+    </div>
+    <div class="guide-row">
+      <button data-guide="1">140.0%</button>
+      <button data-guide="2">130.0%</button>
+      <button data-guide="3">120.0%</button>
+      <button data-guide="4">115.0%</button>
+      <button data-guide="5">113.6%</button>
+    </div>
+    <div class="guide-row">
+      <button data-guide="6">110.0%</button>
+      <button data-guide="7">107.5%</button>
+      <button data-guide="8">104.4%</button>
+      <button data-guide="9">90.0%</button>
+      <button data-guide="10">80.0%</button>
+    </div>
+  </div>
+
+  <!-- ==== グラフ（タイトル非表示） ==== -->
+  <div class="charts">
+    <div class="chart-card">
+      <canvas id="chartScatter"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+/* ===== サーバからの定数 ===== */
+const KINDS = {{ kinds|tojson }};
+const FIXED_MEDALS = {{ fixed_medals|tojson }}; // 例: REG:90 / BIG:210
+const FIXED_YUURI  = {{ fixed_yuuri|tojson }};  // 例: REG:25 / BIG:60
+const DEFAULT_ROWS = {{ default_rows|tojson }};
+
+const tbody = document.getElementById("tbody");
+const totalYuuriCell = document.getElementById("total-yuuri");
+const totalDiffCell  = document.getElementById("total-diff");
+const mbTotalYuuri   = document.getElementById("mb-total-yuuri");
+const mbTotalDiff    = document.getElementById("mb-total-diff");
+
+const floorInt = n=>Math.floor(Number(n)||0);
+const toInt = v=>{ const n=Number(v); return Number.isFinite(n)?Math.trunc(n):0; };
+const makeRowData = (label="", kind="REG", games=0)=>({label, kind, games:toInt(games)});
+
+/* ===== 行生成（総有利/総差はテキスト表示） ===== */
+function buildRow(idx, data){
+  const tr=document.createElement("tr");
+  tr.dataset.index=idx;
+
+  // 履歴
+  const tdLabel=document.createElement("td");
+  tdLabel.dataset.label = "履歴";
+  tdLabel.textContent=data.label || `${idx+1}個目`;
+
+  // 種別（REG/BIG）
+  const tdKind=document.createElement("td");
+  tdKind.dataset.label = "種別";
+  const btnWrap=document.createElement("div");
+  btnWrap.className="kind-btns";
+  const kindVal=data.kind || "REG";
+  KINDS.forEach(k=>{
+    const b=document.createElement("button");
+    b.textContent=k;
+    if(k===kindVal){
+      b.classList.add(k==="REG" ? "reg-selected" : "big-selected");
+    }
+    b.addEventListener("click",()=>{
+      // 色を付替え
+      btnWrap.querySelectorAll("button").forEach(x=>x.classList.remove("reg-selected","big-selected"));
+      b.classList.add(k==="REG" ? "reg-selected" : "big-selected");
+      recalcAll();
+    });
+    btnWrap.appendChild(b);
+  });
+  tdKind.appendChild(btnWrap);
+
+  // ゲーム数（入力）
+  const tdGames=document.createElement("td");
+  tdGames.dataset.label = "ゲーム数";
+  const gInput=document.createElement("input");
+  gInput.type="number"; gInput.value=toInt(data.games ?? 0);
+  gInput.addEventListener("input",recalcAll);
+  tdGames.appendChild(gInput);
+
+  // 総有利G数（累計）→ ★テキスト表示
+  const tdYuuriSum=document.createElement("td");
+  tdYuuriSum.dataset.label = "総有利G数（累計）";
+  const ySumText=document.createElement("span");
+  ySumText.className="value-text";
+  ySumText.textContent="0";
+  tdYuuriSum.appendChild(ySumText);
+
+  // 総差枚数（累計）→ ★テキスト表示
+  const tdDiffSum=document.createElement("td");
+  tdDiffSum.dataset.label = "総差枚数（累計）";
+  const dSumText=document.createElement("span");
+  dSumText.className="value-text";
+  dSumText.textContent="0";
+  tdDiffSum.appendChild(dSumText);
+
+  // 操作
+  const tdOps=document.createElement("td");
+  tdOps.dataset.label = "操作";
+  tdOps.className = "op-col";
+  const delBtn=document.createElement("button");
+  delBtn.textContent="削除";
+  delBtn.addEventListener("click",()=>{tr.remove();renumber();recalcAll();});
+  tdOps.appendChild(delBtn);
+
+  tr.append(tdLabel,tdKind,tdGames,tdYuuriSum,tdDiffSum,tdOps);
+  tr._refs={gInput,ySumText,dSumText,btnWrap, tdLabel};
+  return tr;
+}
+
+function renumber(){
+  [...tbody.querySelectorAll("tr")].forEach((tr,i)=>{
+    tr.dataset.index=i;
+    const lbl = tr._refs?.tdLabel;
+    if (lbl) lbl.textContent = `${i+1}個目`;
+  });
+}
+
+/* ===== ガイド（10本） ===== */
+const GUIDE_OPTIONS = {
+  1:{y:7200,x:6000},2:{y:5400,x:6000},3:{y:3600,x:6000},4:{y:2700,x:6000},5:{y:2448,x:6000},
+  6:{y:1800,x:6000},7:{y:1350,x:6000},8:{y:792,x:6000},9:{y:-1800,x:6000},10:{y:-3600,x:6000}
+};
+const activeGuides = new Set();
+
+/* ===== グラフ ===== */
+let scatterChart = null;
+function initScatterChart(){
+  const ctx = document.getElementById('chartScatter').getContext('2d');
+  if (scatterChart) scatterChart.destroy();
+  const datasets=[{
+    label:'総差枚数',data:[],showLine:true,tension:0.2,pointRadius:0,clip:true
+  }];
+  for(let i=1;i<=10;i++){
+    datasets.push({label:`ガイド${i}`,data:[],showLine:true,pointRadius:0,borderDash:[6,6],hidden:true,clip:true});
+  }
+  scatterChart=new Chart(ctx,{
+    type:'line',
+    data:{datasets},
+    options:{
+      parsing:false,responsive:true,maintainAspectRatio:false,animation:false,
+      scales:{
+        x:{type:'linear',min:0,max:6000,title:{display:true,text:'総有利G数'}},
+        y:{min:-6000,max:3000,title:{display:true,text:'総差枚数'}}
+      },
+      plugins:{legend:{display:false}}  // グラフタイトル（凡例）非表示
+    }
+  });
+}
+
+/* ===== 再計算（前→後の2点/履歴） ===== */
+function recalcAll(){
+  let yuuriAfter=0, diffAfter=0;
+  const points=[{x:0,y:0}];
+
+  [...tbody.querySelectorAll("tr")].forEach(tr=>{
+    const { gInput,ySumText,dSumText,btnWrap } = tr._refs;
+
+    // 選択種別
+    const selBtn=[...btnWrap.querySelectorAll("button")]
+                   .find(b=>b.classList.contains("reg-selected")||b.classList.contains("big-selected"));
+    const kind = selBtn ? selBtn.textContent.trim() : "REG";
+
+    const games=toInt(gInput.value);
+    const medals=FIXED_MEDALS[kind];
+    const yuuri =FIXED_YUURI[kind];
+
+    // 「前」：ゲーム消化のみ
+    const cost=floorInt(games*(50/32));
+    const x_before=yuuriAfter+games;
+    const y_before=diffAfter-cost;
+    points.push({x:x_before,y:y_before});
+
+    // 「後」：当選反映（枚数＋有利）
+    const x_after=x_before+yuuri;
+    const y_after=y_before+medals;
+    points.push({x:x_after,y:y_after});
+
+    // ★ テキスト表示に出力
+    ySumText.textContent = String(x_after);
+    dSumText.textContent = String(y_after);
+
+    // 次の起点
+    yuuriAfter=x_after;
+    diffAfter=y_after;
+  });
+
+  // 合計
+  totalYuuriCell.textContent=String(yuuriAfter);
+  totalDiffCell.textContent=String(diffAfter);
+  mbTotalYuuri.textContent=String(yuuriAfter);
+  mbTotalDiff.textContent=String(diffAfter);
+
+  // グラフ更新
+  if(!scatterChart) initScatterChart();
+  scatterChart.data.datasets[0].data=points;
+
+  for(let i=1;i<=10;i++){
+    const ds=scatterChart.data.datasets[i];
+    if(activeGuides.has(String(i))){
+      const {x,y}=GUIDE_OPTIONS[i];
+      ds.data=[{x:0,y:0},{x,y}];
+      ds.hidden=false;
+    } else {
+      ds.data=[];
+      ds.hidden=true;
+    }
+  }
+  scatterChart.update();
+}
+
+/* ===== ガイド操作（個別 / 全選択 / 全解除） ===== */
+const guideControls=document.getElementById('guide-controls');
+guideControls.addEventListener('click', e=>{
+  const btn=e.target.closest('button[data-guide]');
+  if(!btn) return;
+  const id=btn.getAttribute('data-guide');
+  if(activeGuides.has(id)){ activeGuides.delete(id); btn.classList.remove('active'); }
+  else { activeGuides.add(id); btn.classList.add('active'); }
+  recalcAll();
+});
+document.getElementById('select-all').addEventListener('click',()=>{
+  for(let i=1;i<=10;i++){ activeGuides.add(String(i)); }
+  guideControls.querySelectorAll('button[data-guide]').forEach(b=>b.classList.add('active'));
+  recalcAll();
+});
+document.getElementById('deselect-all').addEventListener('click',()=>{
+  activeGuides.clear();
+  guideControls.querySelectorAll('button[data-guide]').forEach(b=>b.classList.remove('active'));
+  recalcAll();
+});
+
+/* ===== 行操作 ===== */
+function addRow(data=makeRowData()){
+  const idx=tbody.querySelectorAll("tr").length;
+  const tr=buildRow(idx,data);
+  tbody.appendChild(tr);
+  recalcAll();
+}
+function resetRows(){
+  tbody.innerHTML="";
+  DEFAULT_ROWS.forEach(r=>addRow(makeRowData(r.label,"REG",0)));
+  recalcAll();
+}
+
+/* ===== 初期化 ===== */
+resetRows();
+initScatterChart();
+document.getElementById("add-row-btn").addEventListener("click",()=>addRow(makeRowData(`${tbody.children.length+1}個目`,"REG",0)));
+document.getElementById("reset-btn").addEventListener("click",resetRows);
+</script>
+</body>
+</html>

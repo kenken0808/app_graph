@@ -1,0 +1,6 @@
+flask
+pandas
+gunicorn
+beautifulsoup4
+requests
+lxml
