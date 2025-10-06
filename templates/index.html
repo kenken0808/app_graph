@@ -414,6 +414,24 @@ resetRows();
 initScatterChart();
 document.getElementById("add-row-btn").addEventListener("click",()=>addRow(makeRowData(`${tbody.children.length+1}個目`,"REG",""))); // ★ 追加行も空欄
 document.getElementById("reset-btn").addEventListener("click",resetRows);
+
+/* ===== 複数行ペースト対応（縦コピー専用） ===== */
+tbody.addEventListener("paste", (e) => {
+  const text = (e.clipboardData || window.clipboardData).getData("text");
+  const values = text.split(/\r?\n/).map(v => v.trim()).filter(v => v !== "");
+  if (values.length > 1) {
+    e.preventDefault(); // 通常の貼り付け動作をキャンセル
+    const rows = [...tbody.querySelectorAll("tr")];
+    values.forEach((val, i) => {
+      if (rows[i]) {
+        rows[i]._refs.gInput.value = val;
+      }
+    });
+    recalcAll();
+  }
+});
+
+
 </script>
 </body>
 </html>
